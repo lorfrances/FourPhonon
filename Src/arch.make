@@ -14,7 +14,9 @@ GPU_FFLAGS += -DGPU_ALL_MODE_PARALLELIZATION    # use this tag to use all-mode p
 # Linking
 # Example paths - replace with your actual library paths:
 # LDFLAGS = -L$(HOME)/.local/lib64 -lsymspg
-LDFLAGS = -L$(HOME)/.local/lib64 -lsymspg
+LDFLAGS = -L$(HOME)/.local/lib64 \
+          -Wl,-rpath,$(HOME)/.local/lib64 \
+          -lsymspg
 LDFLAGS += -latomic
 export LDFLAGS
 
