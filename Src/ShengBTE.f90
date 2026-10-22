@@ -786,6 +786,14 @@ program ShengBTE
 
   do Tcounter=1,CEILING((T_max-T_min)/T_step)+1
      T=T_min+(Tcounter-1)*T_step
+      if (myid.eq.0) then
+         if (run_target_mode) then
+            print *, "Running target mode"
+            call target_mode(1,5, &
+                              energy,velocity,eigenvect,IJK, &
+                              Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+         endif
+      endif
      if ((T.gt.T_max).and.(T.lt.(T_max+1.d0)))  exit
      if (T.gt.(T_max+1.d0)) T=T_max
      if (myid.eq.0) then

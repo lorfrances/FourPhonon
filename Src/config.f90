@@ -26,9 +26,10 @@ module config
            num_sample_process_3ph,num_sample_process_3ph_phase_space, num_sample_process_4ph,num_sample_process_4ph_phase_space
 
   logical :: nonanalytic,convergence,isotopes,autoisotopes,nanowires,onlyharmonic,espresso,tdep,&
-             four_phonon,four_phonon_iteration,nanolength
+             four_phonon,four_phonon_iteration,nanolength, run_target_mode
+
   namelist /flags/ nonanalytic,convergence,isotopes,autoisotopes,&
-       nanowires,onlyharmonic,espresso,tdep,four_phonon,four_phonon_iteration,nanolength
+       nanowires,onlyharmonic,espresso,tdep,four_phonon,four_phonon_iteration,nanolength, run_target_mode
 
   integer(kind=4) :: nbands,nptk,nwires
   real(kind=8) :: cgrid,V,rV,rlattvec(3,3),slattvec(3,3)
@@ -170,7 +171,7 @@ contains
     onlyharmonic=.false.
     espresso=.false.
     tdep=.false.
-    
+    run_target_mode = .false.
     ! Four-phonon namelist
     four_phonon=.false.
     four_phonon_iteration=.false.

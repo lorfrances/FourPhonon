@@ -355,7 +355,7 @@ module processes
         end do
      end do
    end subroutine ws_cell
- 
+
  
    ! Scattering amplitudes of absorption processes.
    subroutine Ind_plus(mm,N_plus,energy,velocity,eigenvect,Nlist,List,&
@@ -519,7 +519,80 @@ module processes
         WP3_minus=WP3_minus*5.d-1/nptk
      end if
    end subroutine Ind_minus
- 
+   
+subroutine target_mode(iq_target,branch_target, &
+     energy,velocity,eigenvect,IJK, &
+     Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+
+   implicit none
+
+
+   integer(kind=4),intent(in) :: iq_target,branch_target
+   integer(kind=4),intent(in) :: IJK(3,nptk),Ntri
+   integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
+
+   real(kind=8),intent(in) :: energy(nptk,Nbands)
+   real(kind=8),intent(in) :: velocity(nptk,Nbands,3)
+   real(kind=8),intent(in) :: Phi(3,3,3,Ntri)
+   real(kind=8),intent(in) :: R_j(3,Ntri),R_k(3,Ntri)
+
+   complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+
+   integer(kind=4) :: TargetList(1),target_mm
+   integer(kind=4) :: Np,Nm
+   real(kind=8) :: Pp,Pm,WPp,WPm
+   real(kind=8) :: ratep,ratem,rate
+
+   integer(kind=4),allocatable :: ind2p(:),ind3p(:)
+   integer(kind=4),allocatable :: ind2m(:),ind3m(:)
+   real(kind=8),allocatable :: gp(:),gm(:)
+
+
+   TargetList(1)=iq_target
+   target_mm=branch_target
+
+   call NP_plus(target_mm,energy,velocity,1,TargetList,IJK,Np,Pp) ! counts the number of upconversion
+   call NP_minus(target_mm,energy,velocity,1,TargetList,IJK,Nm,Pm) ! counts the number of downconvresion
+
+   allocate(ind2p(Np),ind3p(Np),gp(Np))
+   allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
+
+   if (Np > 0) then ! if there are coalescense processes
+      call Ind_plus(target_mm,Np,energy,velocity,eigenvect,1,TargetList,&
+           Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
+           ind2p,ind3p,gp,WPp)
+   else
+      WPp=0.d0
+   end if
+
+   if (Nm > 0) then ! if there are emission processes 
+      call Ind_minus(target_mm,Nm,energy,velocity,eigenvect,1,TargetList,&
+           Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
+           ind2m,ind3m,gm,WPm)
+   else
+      WPm=0.d0
+   end if
+
+   ratep=sum(gp)
+   ratem=0.5d0*sum(gm)
+   rate=ratep+ratem
+
+   write(*,*) "Target full-grid q index:",iq_target
+   write(*,*) "Target IJK:",IJK(:,iq_target)
+   write(*,*) "Target branch:",branch_target
+   write(*,*) "Target frequency:",energy(iq_target,branch_target)
+   write(*,*) "N plus, N minus:",Np,Nm
+   write(*,*) "3ph plus rate:",ratep
+   write(*,*) "3ph minus rate:",ratem
+   write(*,*) "3ph total rate:",rate
+
+   deallocate(ind2p,ind3p,gp)
+   deallocate(ind2m,ind3m,gm)
+
+end subroutine target_mode
+
+
+
    ! Wrapper around Ind_plus and Ind_minus that splits the work among processors.
    subroutine Ind_driver(energy,velocity,eigenvect,Nlist,List,IJK,N_plus,N_minus,&
         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,&
