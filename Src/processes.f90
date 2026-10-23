@@ -520,14 +520,14 @@ module processes
      end if
    end subroutine Ind_minus
    
-subroutine target_mode(iq_target,branch_target, &
+subroutine target_mode(NList, List, &
      energy,velocity,eigenvect,IJK, &
      Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
 
    implicit none
 
 
-   integer(kind=4),intent(in) :: iq_target,branch_target
+   integer(kind=4),intent(in) :: NList, List(NList), target_mm
    integer(kind=4),intent(in) :: IJK(3,nptk),Ntri
    integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
 
@@ -538,8 +538,7 @@ subroutine target_mode(iq_target,branch_target, &
 
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
 
-   integer(kind=4) :: TargetList(1),target_mm
-   integer(kind=4) :: Np,Nm
+   integer(kind=4) :: Np,Nm,branch,ll
    real(kind=8) :: Pp,Pm,WPp,WPm
    real(kind=8) :: ratep,ratem,rate
 
@@ -547,18 +546,16 @@ subroutine target_mode(iq_target,branch_target, &
    integer(kind=4),allocatable :: ind2m(:),ind3m(:)
    real(kind=8),allocatable :: gp(:),gm(:)
 
-
-   TargetList(1)=iq_target
-   target_mm=branch_target
-
-   call NP_plus(target_mm,energy,velocity,1,TargetList,IJK,Np,Pp) ! counts the number of upconversion
-   call NP_minus(target_mm,energy,velocity,1,TargetList,IJK,Nm,Pm) ! counts the number of downconvresion
+   branch = modulo(target_mm-1,Nbands) + 1
+   ll = int((target_mm-1)/Nbands)+1
+   call NP_plus(target_mm,energy,velocity,NList,List,IJK,Np,Pp) ! counts the number of upconversion
+   call NP_minus(target_mm,energy,velocity,NList,List,IJK,Nm,Pm) ! counts the number of downconvresion
 
    allocate(ind2p(Np),ind3p(Np),gp(Np))
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
 
    if (Np.ne.0) then ! if there are coalescense processes
-      call Ind_plus(target_mm,Np,energy,velocity,eigenvect,1,TargetList,&
+      call Ind_plus(target_mm,Np,energy,velocity,eigenvect,NList,List,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
            ind2p,ind3p,gp,WPp)
    else
@@ -566,7 +563,7 @@ subroutine target_mode(iq_target,branch_target, &
    end if
 
    if (Nm.ne.0) then ! if there are emission processes 
-      call Ind_minus(target_mm,Nm,energy,velocity,eigenvect,1,TargetList,&
+      call Ind_minus(target_mm,Nm,energy,velocity,eigenvect,NList,List,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
            ind2m,ind3m,gm,WPm)
    else
@@ -577,10 +574,11 @@ subroutine target_mode(iq_target,branch_target, &
    ratem=0.5d0*sum(gm)
    rate=ratep+ratem
 
-   write(*,*) "Target full-grid q index:",iq_target
-   write(*,*) "Target IJK:",IJK(:,iq_target)
-   write(*,*) "Target branch:",branch_target
-   write(*,*) "Target frequency:",energy(iq_target,branch_target)
+   write(*,*) "Target mm modal index:", target_mm
+   write(*,*) "Target branch:", branch
+   write(*,*) "Target q index:",List(ll)
+   write(*,*) "Target IJK:",IJK(:,List(ll))
+   write(*,*) "Target frequency:",energy(List(ll),branch)
    write(*,*) "N plus, N minus:",Np,Nm
    write(*,*) "3ph plus rate:",ratep
    write(*,*) "3ph minus rate:",ratem

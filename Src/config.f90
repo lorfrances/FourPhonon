@@ -20,10 +20,10 @@ module config
   real(kind=8) :: T_min,T_max,T_step,omega_max,Length
   real(kind=8) :: Ewald ! used for polar
 
-  integer(kind=4) :: num_sample_process_3ph,num_sample_process_3ph_phase_space, num_sample_process_4ph, num_sample_process_4ph_phase_space
+  integer(kind=4) :: num_sample_process_3ph,num_sample_process_3ph_phase_space, num_sample_process_4ph, num_sample_process_4ph_phase_space, target_mm
   namelist /parameters/ T,scalebroad,rmin,rmax,dr,maxiter,nticks,eps,&
            T_min,T_max,T_step,omega_max,Length,Ewald, &
-           num_sample_process_3ph,num_sample_process_3ph_phase_space, num_sample_process_4ph,num_sample_process_4ph_phase_space
+           num_sample_process_3ph,num_sample_process_3ph_phase_space, num_sample_process_4ph,num_sample_process_4ph_phase_space, target_mm
 
   logical :: nonanalytic,convergence,isotopes,autoisotopes,nanowires,onlyharmonic,espresso,tdep,&
              four_phonon,four_phonon_iteration,nanolength, run_target_mode

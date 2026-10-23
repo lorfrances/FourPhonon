@@ -267,7 +267,7 @@ program ShengBTE
       if (myid.eq.0) then
          print *, "Info: Temperature=",T
          print *, "Running target mode"
-         call target_mode(7,1, &
+         call target_mode(NList, List, &
                         energy,velocity,eigenvect,IJK, &
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
       endif
