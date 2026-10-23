@@ -557,7 +557,7 @@ subroutine target_mode(iq_target,branch_target, &
    allocate(ind2p(Np),ind3p(Np),gp(Np))
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
 
-   if (Np > 0) then ! if there are coalescense processes
+   if (Np.ne.0) then ! if there are coalescense processes
       call Ind_plus(target_mm,Np,energy,velocity,eigenvect,1,TargetList,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
            ind2p,ind3p,gp,WPp)
@@ -565,7 +565,7 @@ subroutine target_mode(iq_target,branch_target, &
       WPp=0.d0
    end if
 
-   if (Nm > 0) then ! if there are emission processes 
+   if (Nm.ne.0) then ! if there are emission processes 
       call Ind_minus(target_mm,Nm,energy,velocity,eigenvect,1,TargetList,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
            ind2m,ind3m,gm,WPm)
@@ -1122,7 +1122,6 @@ end subroutine target_mode
                   N_minus_reduce(mm) = N_temp
                   Pspace_minus_reduce(mm) = Pspace_temp
                endif
-               write(*,*) "HOWDY N plus, N minus:",Np,Nm
             endif
          end do
          !$OMP END PARALLEL DO
