@@ -527,7 +527,7 @@ subroutine target_mode(NList, List, &
    implicit none
 
 
-   integer(kind=4),intent(in) :: NList, List(NList), target_mm
+   integer(kind=4),intent(in) :: NList, List(NList)
    integer(kind=4),intent(in) :: IJK(3,nptk),Ntri
    integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
 
