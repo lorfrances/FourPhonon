@@ -529,7 +529,7 @@ module processes
         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
         Indof2ndPhonon_plus,Indof3rdPhonon_plus,Gamma_plus,WP3_plus,file_plus)
      implicit none
- 
+   
      integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),N_plus,Ntri
      integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
      real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
@@ -537,7 +537,7 @@ module processes
      complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
      integer(kind=4),intent(out) :: Indof2ndPhonon_plus(N_plus),Indof3rdPhonon_plus(N_plus)
      real(kind=8),intent(out) :: Gamma_plus(N_plus),WP3_plus
- 
+     integer(kind=4),intent(in) :: file_plus
      integer(kind=4) :: q(3),qprime(3),qdprime(3),i,j,k,N_plus_count
      integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
      integer(kind=4) :: ii,jj,kk,ll,ss
