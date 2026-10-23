@@ -251,6 +251,33 @@ program ShengBTE
   call eigenDM(energy,eigenvect,velocity)
   if(myid.eq.0)write(*,*) "Info: spectrum calculation finished"
 
+   if (run_target_mode) then
+   ! Load the 3rd-IFCs from FORCE_CONSTANTS_3RD.
+   call read3fc(Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+
+   ! Load the 4th-IFCs from FORCE_CONSTANTS_4TH.
+   if (four_phonon) then
+         call read4fc(Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u)
+   end if
+
+   do Tcounter=1,CEILING((T_max-T_min)/T_step)+1
+      T=T_min+(Tcounter-1)*T_step
+      if ((T.gt.T_max).and.(T.lt.(T_max+1.d0)))  exit
+      if (T.gt.(T_max+1.d0)) T=T_max
+      if (myid.eq.0) then
+         print *, "Info: Temperature=",T
+         print *, "Running target mode"
+         call target_mode(7,1, &
+                        energy,velocity,eigenvect,IJK, &
+                        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+      endif
+   enddo
+   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+   call MPI_FINALIZE(ierr)
+   stop
+   end if
+
+
   open(101,file="BTE.cvVsT")
   open(102,file="BTE.KappaTensorVsT_sg")
   if (myid.eq.0) print*, "Info: start calculating specific heat and kappa in the small-grain limit "
@@ -786,14 +813,6 @@ program ShengBTE
 
   do Tcounter=1,CEILING((T_max-T_min)/T_step)+1
      T=T_min+(Tcounter-1)*T_step
-      if (myid.eq.0) then
-         if (run_target_mode) then
-            print *, "Running target mode"
-            call target_mode(7,1, &
-                              energy,velocity,eigenvect,IJK, &
-                              Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
-         endif
-      endif
      if ((T.gt.T_max).and.(T.lt.(T_max+1.d0)))  exit
      if (T.gt.(T_max+1.d0)) T=T_max
      if (myid.eq.0) then
