@@ -678,7 +678,7 @@ module processes
                        WP3_minus=WP3_minus+WP3
                        Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
                        Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
-                       write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,realqdprime,sigma,nptk,Gamma_minus(N_plus_count)
+                       write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,realqdprime,sigma,nptk,Gamma_minus(N_minus_count)
                     end if
                  end if
               end do ! k
