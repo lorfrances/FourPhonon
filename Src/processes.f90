@@ -1122,6 +1122,7 @@ end subroutine target_mode
                   N_minus_reduce(mm) = N_temp
                   Pspace_minus_reduce(mm) = Pspace_temp
                endif
+               write(*,*) "HOWDY N plus, N minus:",Np,Nm
             endif
          end do
          !$OMP END PARALLEL DO
