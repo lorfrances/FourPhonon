@@ -598,7 +598,7 @@ module processes
                        ! (1.d-34J*s)*(1.d12/s)^(-4)*1amu^(-3)*(ev/angstrom**3)^2,
                        ! that is, 5.60626442*1.d8 THz
                        Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
-                       write(file_plus,*)i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,nptk,Gamma_plus(N_plus_count),realqdprime
+                       write(file_plus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,nptk,Gamma_plus(N_plus_count),realqdprime,sigma
                     end if
                  end if
               end do ! k
