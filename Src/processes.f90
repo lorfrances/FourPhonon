@@ -546,6 +546,7 @@ module processes
      real(kind=8) :: omega,omegap,omegadp
      real(kind=8) :: realqprime(3),realqdprime(3)
      real(kind=8) :: WP3
+     real(kind=8) :: delta_function
      complex(kind=8) :: Vp
  
      do ii=0,Ngrid(1)-1        ! G1 direction
@@ -586,19 +587,18 @@ module processes
                        Indof2ndPhonon_plus(N_plus_count)=(ii-1)*Nbands+j
                        Indof3rdPhonon_plus(N_plus_count)=(ss-1)*Nbands+k
                        fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                       delta_function=exp(-(omega+omegap-omegadp)**2/(sigma**2))/sigma/sqrt(Pi)
                        Vp=Vp_plus(i,j,k,list(ll),ii,ss,&
                             realqprime,realqdprime,eigenvect,&
                             Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
-                       WP3=(fBEprime-fBEdprime)*&
-                            exp(-(omega+omegap-omegadp)**2/(sigma**2))/sigma/sqrt(Pi)/&
-                            (omega*omegap*omegadp)
+                       WP3=(fBEprime-fBEdprime)*delta_function/(omega*omegap*omegadp)
                        WP3_plus=WP3_plus+WP3
                        Gamma_plus(N_plus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
                        ! At this point, Gamma's units are
                        ! (1.d-34J*s)*(1.d12/s)^(-4)*1amu^(-3)*(ev/angstrom**3)^2,
                        ! that is, 5.60626442*1.d8 THz
                        Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
-                       write(file_plus,*)i, j, k
+                       write(file_plus,*)i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,nptk,Gamma_plus(N_plus_count),realqdprime
                     end if
                  end if
               end do ! k
