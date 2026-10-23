@@ -519,10 +519,178 @@ module processes
         WP3_minus=WP3_minus*5.d-1/nptk
      end if
    end subroutine Ind_minus
-   
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! CUSTOM CODE FOR MODE SPECFIC TRANSITION DATA (AUTHOR: LORENZO FRANCESCHETTI)
+
+   subroutine Ind_plus_t(mm,N_plus,energy,velocity,eigenvect,Nlist,List,&
+        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
+        Indof2ndPhonon_plus,Indof3rdPhonon_plus,Gamma_plus,WP3_plus,file_plus)
+     implicit none
+ 
+     integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),N_plus,Ntri
+     integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
+     real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
+     real(kind=8),intent(in) :: Phi(3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri)
+     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+     integer(kind=4),intent(out) :: Indof2ndPhonon_plus(N_plus),Indof3rdPhonon_plus(N_plus)
+     real(kind=8),intent(out) :: Gamma_plus(N_plus),WP3_plus
+ 
+     integer(kind=4) :: q(3),qprime(3),qdprime(3),i,j,k,N_plus_count
+     integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
+     integer(kind=4) :: ii,jj,kk,ll,ss
+     real(kind=8) :: sigma
+     real(kind=8) :: fBEprime,fBEdprime
+     real(kind=8) :: omega,omegap,omegadp
+     real(kind=8) :: realqprime(3),realqdprime(3)
+     real(kind=8) :: WP3
+     complex(kind=8) :: Vp
+ 
+     do ii=0,Ngrid(1)-1        ! G1 direction
+        do jj=0,Ngrid(2)-1     ! G2 direction
+           do kk=0,Ngrid(3)-1  ! G3 direction
+              Index_N(ii,jj,kk)=(kk*Ngrid(2)+jj)*Ngrid(1)+ii+1
+           end do
+        end do
+     end do
+     N_plus_count=0
+     WP3_plus=0.d0
+     i=modulo(mm-1,Nbands)+1
+     ll=int((mm-1)/Nbands)+1
+     q=IJK(:,list(ll))
+     omega=energy(list(ll),i)
+     ! Loop over all processes, detecting those that are allowed and
+     ! computing their amplitudes.
+     if(omega.ne.0) then
+        do j=1,Nbands
+           do ii=1,nptk
+              qprime=IJK(:,ii)
+              realqprime=matmul(rlattvec,qprime/dble(ngrid))
+              omegap=energy(ii,j)
+              fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+              !--------BEGIN absorption process-----------
+              do k=1,Nbands
+                 qdprime=q+qprime
+                 qdprime=modulo(qdprime,Ngrid)
+                 realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                 ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
+                 omegadp=energy(ss,k)
+                 if ((omegap.ne.0).and.(omegadp.ne.0)) then
+                    sigma=scalebroad*base_sigma(&
+                         velocity(ii,j,:)-&
+                         velocity(ss,k,:))
+                    if(abs(omega+omegap-omegadp).le.(2.d0*sigma)) then
+                       N_plus_count=N_plus_count+1
+                       Indof2ndPhonon_plus(N_plus_count)=(ii-1)*Nbands+j
+                       Indof3rdPhonon_plus(N_plus_count)=(ss-1)*Nbands+k
+                       fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                       Vp=Vp_plus(i,j,k,list(ll),ii,ss,&
+                            realqprime,realqdprime,eigenvect,&
+                            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+                       WP3=(fBEprime-fBEdprime)*&
+                            exp(-(omega+omegap-omegadp)**2/(sigma**2))/sigma/sqrt(Pi)/&
+                            (omega*omegap*omegadp)
+                       WP3_plus=WP3_plus+WP3
+                       Gamma_plus(N_plus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
+                       ! At this point, Gamma's units are
+                       ! (1.d-34J*s)*(1.d12/s)^(-4)*1amu^(-3)*(ev/angstrom**3)^2,
+                       ! that is, 5.60626442*1.d8 THz
+                       Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
+                       write(file_plus,*)i, j, k
+                    end if
+                 end if
+              end do ! k
+              !--------END absorption process-------------!
+           end do ! ii
+        end do  ! j
+        WP3_plus=WP3_plus/nptk
+     end if
+   end subroutine Ind_plus_t
+
+   subroutine Ind_minus_t(mm,N_minus,energy,velocity,eigenvect,Nlist,List,&
+        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
+        Indof2ndPhonon_minus,Indof3rdPhonon_minus,Gamma_minus,WP3_minus)
+     implicit none
+ 
+     integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),N_minus,Ntri
+     integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri)
+     real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
+     real(kind=8),intent(in) :: Phi(3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri)
+     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+     integer(kind=4),intent(out) :: Indof2ndPhonon_minus(N_minus),Indof3rdPhonon_minus(N_minus)
+     real(kind=8),intent(out) :: Gamma_minus(N_minus),WP3_minus
+ 
+     integer(kind=4) :: q(3),qprime(3),qdprime(3),i,j,k,N_minus_count
+     integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
+     integer(kind=4) :: ii,jj,kk,ll,ss
+     real(kind=8) :: sigma
+     real(kind=8) :: fBEprime,fBEdprime
+     real(kind=8) ::  omega,omegap,omegadp
+     real(kind=8) :: realqprime(3),realqdprime(3)
+     real(kind=8) :: WP3
+     complex(kind=8) :: Vp
+ 
+     do ii=0,Ngrid(1)-1        ! G1 direction
+        do jj=0,Ngrid(2)-1     ! G2 direction
+           do kk=0,Ngrid(3)-1  ! G3 direction
+              Index_N(ii,jj,kk)=(kk*Ngrid(2)+jj)*Ngrid(1)+ii+1
+           end do
+        end do
+     end do
+     N_minus_count=0
+     WP3_minus=0.d0
+     i=modulo(mm-1,Nbands)+1
+     ll=int((mm-1)/Nbands)+1
+     q=IJK(:,list(ll))
+     omega=energy(list(ll),i)
+     if(omega.ne.0) then
+        do j=1,Nbands
+           do ii=1,nptk
+              qprime=IJK(:,ii)
+              realqprime=matmul(rlattvec,qprime/dble(ngrid))
+              omegap=energy(ii,j)
+              fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+              !--------BEGIN emission process-----------
+              do k=1,Nbands
+                 qdprime=q-qprime
+                 qdprime=modulo(qdprime,Ngrid)
+                 realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                 ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
+                 omegadp=energy(ss,k)
+                 if ((omegap.ne.0).and.(omegadp.ne.0)) then
+                    sigma=scalebroad*base_sigma(&
+                         velocity(ii,j,:)-&
+                         velocity(ss,k,:))
+                    if (abs(omega-omegap-omegadp).le.(2.d0*sigma)) then
+                       N_minus_count=N_minus_count+1
+                       Indof2ndPhonon_minus(N_minus_count)=(ii-1)*Nbands+j
+                       Indof3rdPhonon_minus(N_minus_count)=(ss-1)*Nbands+k
+                       fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                       Vp=Vp_minus(i,j,k,list(ll),ii,ss,&
+                            realqprime,realqdprime,eigenvect,&
+                            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+                       WP3=(fBEprime+fBEdprime+1)*&
+                            exp(-(omega-omegap-omegadp)**2/(sigma**2))/sigma/sqrt(Pi)/&
+                            (omega*omegap*omegadp)
+                       WP3_minus=WP3_minus+WP3
+                       Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
+                       Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
+                    end if
+                 end if
+              end do ! k
+              !--------END emission process-------------
+           end do ! ii
+        end do  ! j
+        WP3_minus=WP3_minus*5.d-1/nptk
+     end if
+   end subroutine Ind_minus_t
+
+
 subroutine target_mode(NList, List, &
      energy,velocity,eigenvect,IJK, &
-     Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+     Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
 
    implicit none
 
@@ -555,17 +723,17 @@ subroutine target_mode(NList, List, &
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
 
    if (Np.ne.0) then ! if there are coalescense processes
-      call Ind_plus(target_mm,Np,energy,velocity,eigenvect,NList,List,&
+      call Ind_plus_t(target_mm,Np,energy,velocity,eigenvect,NList,List,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
-           ind2p,ind3p,gp,WPp)
+           ind2p,ind3p,gp,WPp,file_plus)
    else
       WPp=0.d0
    end if
 
    if (Nm.ne.0) then ! if there are emission processes 
-      call Ind_minus(target_mm,Nm,energy,velocity,eigenvect,NList,List,&
+      call Ind_minus_t(target_mm,Nm,energy,velocity,eigenvect,NList,List,&
            Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
-           ind2m,ind3m,gm,WPm)
+           ind2m,ind3m,gm,WPm,file_minus)
    else
       WPm=0.d0
    end if
@@ -588,6 +756,15 @@ subroutine target_mode(NList, List, &
    deallocate(ind2m,ind3m,gm)
 
 end subroutine target_mode
+
+
+
+!!!!!!!!!!!!!!
+
+
+
+
+
 
 
 

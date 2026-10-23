@@ -106,7 +106,7 @@ program ShengBTE
   character(len=1024) :: path
   character(len=128) :: sorientation
   character(len=30) :: tempstring1,tempstring2,tempstring3
-
+  integer(kind=4) :: file_plus,file_minus ! initialize file handles
   real(kind=8) :: dnrm2
 
    ! MPI time
@@ -267,9 +267,13 @@ program ShengBTE
       if (myid.eq.0) then
          print *, "Info: Temperature=",T
          print *, "Running target mode"
+         open(newunit=file_plus, file="3ph_upconversion.txt",status="replace",action="write")
+         open(newunit=file_minus, file="3ph_downconversion.txt",status="replace",action="write")
          call target_mode(NList, List, &
                         energy,velocity,eigenvect,IJK, &
-                        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+                        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
+         close(file_plus)
+         close(file_minus)
       endif
    enddo
    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
