@@ -789,7 +789,7 @@ program ShengBTE
       if (myid.eq.0) then
          if (run_target_mode) then
             print *, "Running target mode"
-            call target_mode(1,2, &
+            call target_mode(7,1, &
                               energy,velocity,eigenvect,IJK, &
                               Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
          endif
