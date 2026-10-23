@@ -611,7 +611,7 @@ module processes
 
    subroutine Ind_minus_t(mm,N_minus,energy,velocity,eigenvect,Nlist,List,&
         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
-        Indof2ndPhonon_minus,Indof3rdPhonon_minus,Gamma_minus,WP3_minus)
+        Indof2ndPhonon_minus,Indof3rdPhonon_minus,Gamma_minus,WP3_minus,file_minus)
      implicit none
  
      integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),N_minus,Ntri
@@ -621,7 +621,8 @@ module processes
      complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
      integer(kind=4),intent(out) :: Indof2ndPhonon_minus(N_minus),Indof3rdPhonon_minus(N_minus)
      real(kind=8),intent(out) :: Gamma_minus(N_minus),WP3_minus
- 
+     integer(kind=4),intent(in) :: file_minus
+
      integer(kind=4) :: q(3),qprime(3),qdprime(3),i,j,k,N_minus_count
      integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
      integer(kind=4) :: ii,jj,kk,ll,ss
@@ -713,7 +714,7 @@ subroutine target_mode(NList, List, &
    integer(kind=4),allocatable :: ind2p(:),ind3p(:)
    integer(kind=4),allocatable :: ind2m(:),ind3m(:)
    real(kind=8),allocatable :: gp(:),gm(:)
-
+   integer(kind=4) :: file_plus, file_minus
    branch = modulo(target_mm-1,Nbands) + 1
    ll = int((target_mm-1)/Nbands)+1
    call NP_plus(target_mm,energy,velocity,NList,List,IJK,Np,Pp) ! counts the number of upconversion
