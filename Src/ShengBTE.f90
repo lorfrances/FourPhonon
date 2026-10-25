@@ -254,11 +254,13 @@ program ShengBTE
 
    if (run_target_mode) then
    ! Load the 3rd-IFCs from FORCE_CONSTANTS_3RD.
+   print *, "Loading 3rd-order force constants"
    call read3fc(Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
 
    ! Load the 4th-IFCs from FORCE_CONSTANTS_4TH.
    if (four_phonon) then
-         call read4fc(Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u)
+      print *, "Loading 4th-order force constants"
+      call read4fc(Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u)
    end if
 
    do Tcounter=1,CEILING((T_max-T_min)/T_step)+1

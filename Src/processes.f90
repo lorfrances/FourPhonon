@@ -708,8 +708,8 @@ subroutine target_mode(NList, List, &
 
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
 
-   integer(kind=4) :: Np,Nm,branch,ll
-   real(kind=8) :: Pp,Pm,WPp,WPm
+   integer(kind=4) :: Np,Nm,branch,ll,Npp
+   real(kind=8) :: Pp,Pm,WPp,WPm,Ppp
    real(kind=8) :: ratep,ratem,rate
 
    integer(kind=4),allocatable :: ind2p(:),ind3p(:)
@@ -718,8 +718,22 @@ subroutine target_mode(NList, List, &
    integer(kind=4) :: file_plus, file_minus
    branch = modulo(target_mm-1,Nbands) + 1
    ll = int((target_mm-1)/Nbands)+1
+
+   print *, "Counting the number of q + q' => q'' transitions"
    call NP_plus(target_mm,energy,velocity,NList,List,IJK,Np,Pp) ! counts the number of upconversion
+   print *, "The count is ", Np
+   print *, "Counting the number of q => q' + q'' transitions"
    call NP_minus(target_mm,energy,velocity,NList,List,IJK,Nm,Pm) ! counts the number of downconvresion
+   print *, "The count is ", Nm
+   print *, "Counting the number of q + q' + q'' => q''' transitions"
+   call NP_plusplus(target_mm, energy, velocity, NList, List, IJK, Npp, Ppp)
+   print *, "The count is ",Npp
+   print *, "Counting the number of q + q' => q'' + q''' transitions"
+   call NP_plusminus(target_mm, energy, velocity, NList, List, IJK, Npm, Ppm)
+   print *, "The count is ",Npm
+   print *, "Counting the number of q => q' + q'' + q''' transitions"
+   call NP_minusminus(target_mm, energy, velocity, NList, List, IJK, Nmm, Pmm)
+   print *, "The count is ",Nmm   
 
    allocate(ind2p(Np),ind3p(Np),gp(Np))
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
