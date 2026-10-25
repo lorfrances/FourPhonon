@@ -708,8 +708,9 @@ subroutine target_mode(NList, List, &
 
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
 
-   integer(kind=4) :: Np,Nm,branch,ll,Npp,Npm,Nmm
-   real(kind=8) :: Pp,Pm,WPp,WPm,Ppp,Ppm,Nmm
+   integer(kind=4) :: Np,Nm,branch,ll
+   integer(kind=8) :: Npp,Npm,Nmm
+   real(kind=8) :: Pp,Pm,WPp,WPm,Ppp,Ppm,Pmm
    real(kind=8) :: ratep,ratem,rate
 
    integer(kind=4),allocatable :: ind2p(:),ind3p(:)
