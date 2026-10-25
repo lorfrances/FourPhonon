@@ -719,21 +719,21 @@ subroutine target_mode(NList, List, &
    branch = modulo(target_mm-1,Nbands) + 1
    ll = int((target_mm-1)/Nbands)+1
 
-   print *, "Counting the number of q + q' => q'' transitions"
+   write(*,*) "Counting the number of q + q' => q'' transitions"
    call NP_plus(target_mm,energy,velocity,NList,List,IJK,Np,Pp) ! counts the number of upconversion
-   print *, "The count is ", Np
-   print *, "Counting the number of q => q' + q'' transitions"
+   write(*,*)  "The count is ", Np
+   write(*,*)  "Counting the number of q => q' + q'' transitions"
    call NP_minus(target_mm,energy,velocity,NList,List,IJK,Nm,Pm) ! counts the number of downconvresion
-   print *, "The count is ", Nm
-   print *, "Counting the number of q + q' + q'' => q''' transitions"
+   write(*,*)  "The count is ", Nm
+   write(*,*)  "Counting the number of q + q' + q'' => q''' transitions"
    call NP_plusplus(target_mm, energy, velocity, NList, List, IJK, Npp, Ppp)
-   print *, "The count is ",Npp
-   print *, "Counting the number of q + q' => q'' + q''' transitions"
+   write(*,*)  "The count is ",Npp
+   write(*,*)  "Counting the number of q + q' => q'' + q''' transitions"
    call NP_plusminus(target_mm, energy, velocity, NList, List, IJK, Npm, Ppm)
-   print *, "The count is ",Npm
-   print *, "Counting the number of q => q' + q'' + q''' transitions"
+   write(*,*)  "The count is ",Npm
+   write(*,*)  "Counting the number of q => q' + q'' + q''' transitions"
    call NP_minusminus(target_mm, energy, velocity, NList, List, IJK, Nmm, Pmm)
-   print *, "The count is ",Nmm   
+   write(*,*) "The count is ",Nmm   
 
    allocate(ind2p(Np),ind3p(Np),gp(Np))
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
