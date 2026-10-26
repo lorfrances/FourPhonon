@@ -660,7 +660,7 @@ module processes
                  qdprime=q-qprime
                  qdprime=modulo(qdprime,Ngrid)
                  realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
-                 call ws_cell(realqdprime,qdprime_folded)
+                 call ws_cell(qdprime,qdprime_folded)
                  ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
                  omegadp=energy(ss,k)
                  if ((omegap.ne.0).and.(omegadp.ne.0)) then
