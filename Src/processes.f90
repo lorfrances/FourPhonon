@@ -630,6 +630,7 @@ module processes
      real(kind=8) :: fBEprime,fBEdprime
      real(kind=8) ::  omega,omegap,omegadp
      real(kind=8) :: realqprime(3),realqdprime(3)
+     real(kind=8) :: qdprime_folded(3)
      real(kind=8) :: WP3
      real(kind=8) :: delta_function
      complex(kind=8) :: Vp
@@ -659,6 +660,7 @@ module processes
                  qdprime=q-qprime
                  qdprime=modulo(qdprime,Ngrid)
                  realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                 call ws_cell(realqdprime,qdprime_folded)
                  ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
                  omegadp=energy(ss,k)
                  if ((omegap.ne.0).and.(omegadp.ne.0)) then
@@ -678,7 +680,7 @@ module processes
                        WP3_minus=WP3_minus+WP3
                        Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
                        Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
-                       write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,realqdprime,sigma,nptk,Gamma_minus(N_minus_count)
+                       write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,sigma,nptk,Gamma_minus(N_minus_count)
                     end if
                  end if
               end do ! k
