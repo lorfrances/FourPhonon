@@ -726,7 +726,7 @@ subroutine target_mode(NList, List, &
    write(*,*)  "Counting the number of q => q' + q'' transitions"
    call NP_minus(target_mm,energy,velocity,NList,List,IJK,Nm,Pm) ! counts the number of downconvresion
    write(*,*)  "The count is ", Nm
-   if (four_phonon)
+   if (four_phonon) then
       write(*,*)  "Counting the number of q + q' + q'' => q''' transitions"
       call NP_plusplus(target_mm, energy, velocity, NList, List, IJK, Npp, Ppp)
       write(*,*)  "The count is ",Npp
