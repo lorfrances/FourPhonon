@@ -272,6 +272,17 @@ program ShengBTE
          print *, "Running target mode"
          open(newunit=file_plus, file="3ph_upconversion.txt",status="replace",action="write")
          open(newunit=file_minus, file="3ph_downconversion.txt",status="replace",action="write")
+         write(file_plus,'(A)') &
+            '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
+            'omega0 omega1 omega2 Vp_abs delta_weight ' // &
+            'qdp_radial sigma nptk gamma_raw'
+
+         write(file_minus,'(A)') &
+            '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
+            'omega0 omega1 omega2 Vp_abs delta_weight ' // &
+            'qdp_radial sigma nptk gamma_raw'
+         
+         
          call target_mode(NList, List, &
                         energy,velocity,eigenvect,IJK, &
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)

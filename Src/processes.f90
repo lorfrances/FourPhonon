@@ -598,8 +598,7 @@ module processes
                        ! (1.d-34J*s)*(1.d12/s)^(-4)*1amu^(-3)*(ev/angstrom**3)^2,
                        ! that is, 5.60626442*1.d8 THz
                        Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
-                       write(file_plus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,realqdprime,sigma,nptk,Gamma_plus(N_plus_count)
-                    end if
+                       write(file_plus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdp_radial,sigma,nptk,Gamma_plus(N_plus_count)
                  end if
               end do ! k
               !--------END absorption process-------------!
@@ -632,7 +631,7 @@ module processes
      real(kind=8) :: realqprime(3),realqdprime(3)
      real(kind=8) :: qdprime_folded(3)
      real(kind=8) :: WP3
-     real(kind=8) :: delta_function
+     real(kind=8) :: delta_function, qdp_radial
      complex(kind=8) :: Vp
  
      do ii=0,Ngrid(1)-1        ! G1 direction
@@ -660,9 +659,10 @@ module processes
                  qdprime=q-qprime
                  qdprime=modulo(qdprime,Ngrid)
                  realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
-                 call ws_cell(qdprime,qdprime_folded)
+                 call ws_cell(qdprime,qdprime_folded) ! fold q points to 1st Brilloin zone
                  ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
                  omegadp=energy(ss,k)
+                 qdp_radial = norm2(qdprime_folded)
                  if ((omegap.ne.0).and.(omegadp.ne.0)) then
                     sigma=scalebroad*base_sigma(&
                          velocity(ii,j,:)-&
@@ -680,7 +680,7 @@ module processes
                        WP3_minus=WP3_minus+WP3
                        Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
                        Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
-                       write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,sigma,nptk,Gamma_minus(N_minus_count)
+                       write(file_minus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdp_radial,sigma,nptk,Gamma_minus(N_minus_count)
                     end if
                  end if
               end do ! k
