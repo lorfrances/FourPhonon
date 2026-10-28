@@ -545,8 +545,9 @@ module processes
      real(kind=8) :: fBEprime,fBEdprime
      real(kind=8) :: omega,omegap,omegadp
      real(kind=8) :: realqprime(3),realqdprime(3)
+     real(kind=8) :: qdprime_folded(3)
      real(kind=8) :: WP3
-     real(kind=8) :: delta_function
+     real(kind=8) :: delta_function, qdp_radial
      complex(kind=8) :: Vp
  
      do ii=0,Ngrid(1)-1        ! G1 direction
@@ -570,12 +571,14 @@ module processes
               qprime=IJK(:,ii)
               realqprime=matmul(rlattvec,qprime/dble(ngrid))
               omegap=energy(ii,j)
-              fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+              fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)              
               !--------BEGIN absorption process-----------
               do k=1,Nbands
                  qdprime=q+qprime
                  qdprime=modulo(qdprime,Ngrid)
                  realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                 call ws_cell(qdprime,qdprime_folded)
+                 qdp_radial = norm2(qdprime_folded)
                  ss=Index_N(qdprime(1),qdprime(2),qdprime(3))
                  omegadp=energy(ss,k)
                  if ((omegap.ne.0).and.(omegadp.ne.0)) then
@@ -599,7 +602,8 @@ module processes
                        ! that is, 5.60626442*1.d8 THz
                        Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
                        write(file_plus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdp_radial,sigma,nptk,Gamma_plus(N_plus_count)
-                 end if
+                     end if 
+                  end if
               end do ! k
               !--------END absorption process-------------!
            end do ! ii
