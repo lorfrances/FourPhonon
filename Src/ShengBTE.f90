@@ -276,7 +276,7 @@ program ShengBTE
          write(file_plus,'(A)') &
             '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
             'omega0 omega1 omega2 Vp_abs delta_weight ' // &
-            'q1 q2 q3 qdp_radial sigma nptk gamma_raw'
+            'q1 q2 q3 qdp_radial sigma gamma_raw'
 
          write(file_minus,'(A)') &
             '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
