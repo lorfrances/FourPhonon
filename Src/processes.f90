@@ -686,6 +686,10 @@ module processes
                        Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
                        write(file_minus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,qdp_radial,sigma,Gamma_minus(N_minus_count)
                     end if
+                       if (Indof2ndPhonon_minus(N_minus_count).le.Indof3rdPhonon_minus(N_minus_count)) then
+                           write(file_minus,'(*(g0,1X))') i, j, k, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,sigma,nptk,Gamma_minus(N_minus_count)
+                       end if
+                     end if
                  end if
               end do ! k
               !--------END emission process-------------

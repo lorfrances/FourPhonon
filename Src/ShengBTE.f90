@@ -106,6 +106,7 @@ program ShengBTE
   character(len=1024) :: path
   character(len=128) :: sorientation
   character(len=30) :: tempstring1,tempstring2,tempstring3
+  character(len=128) :: filename_plus, filename_minus
   integer(kind=4) :: file_plus,file_minus ! initialize file handles
   
   real(kind=8) :: dnrm2
@@ -283,6 +284,13 @@ program ShengBTE
             'q1 q2 q3 qdp_radial sigma gamma_raw'
          
          
+         write(filename_plus,'(I0,A,I0,A)') &
+            target_mm,'_3ph_plus_',nptk,'.DAT'
+         write(filename_minus,'(I0,A,I0,A)') &
+            target_mm,'_3ph_minus_',nptk,'.DAT'
+
+         open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
+         open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
          call target_mode(NList, List, &
                         energy,velocity,eigenvect,IJK, &
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
