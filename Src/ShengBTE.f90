@@ -270,9 +270,16 @@ program ShengBTE
       if (T.gt.(T_max+1.d0)) T=T_max
       if (myid.eq.0) then
          print *, "Info: Temperature=",T
-         print *, "Running target mode"
-         open(newunit=file_plus, file="3ph_upconversion.txt",status="replace",action="write")
-         open(newunit=file_minus, file="3ph_downconversion.txt",status="replace",action="write")
+         print *, "Running target mode"         
+         
+         write(filename_plus,'(I0,A,I0,A)') &
+            target_mm,'_3ph_plus_',nptk,'.DAT'
+         write(filename_minus,'(I0,A,I0,A)') &
+            target_mm,'_3ph_minus_',nptk,'.DAT'
+
+         open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
+         open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
+
          write(file_plus,'(A)') &
             '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
             'omega0 omega1 omega2 Vp_abs delta_weight ' // &
@@ -282,15 +289,7 @@ program ShengBTE
             '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
             'omega0 omega1 omega2 Vp_abs delta_weight ' // &
             'q1 q2 q3 qdp_radial sigma gamma_raw'
-         
-         
-         write(filename_plus,'(I0,A,I0,A)') &
-            target_mm,'_3ph_plus_',nptk,'.DAT'
-         write(filename_minus,'(I0,A,I0,A)') &
-            target_mm,'_3ph_minus_',nptk,'.DAT'
 
-         open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
-         open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
          call target_mode(NList, List, &
                         energy,velocity,eigenvect,IJK, &
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
