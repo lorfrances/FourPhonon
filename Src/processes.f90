@@ -524,6 +524,7 @@ module processes
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! CUSTOM CODE FOR MODE SPECFIC TRANSITION DATA (AUTHOR: LORENZO FRANCESCHETTI)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine Ind_plus_t(mm,N_plus,energy,velocity,eigenvect,Nlist,List,&
         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,IJK,&
@@ -698,8 +699,402 @@ module processes
      end if
    end subroutine Ind_minus_t
 
+   ! Scattering amplitudes of 4ph ++ processes.
+   subroutine Ind_plusplus_t(mm,N_plusplus,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       Indof2ndPhonon_plusplus,Indof3rdPhonon_plusplus,Indof4thPhonon_plusplus,Gamma_plusplus,WP4_plusplus)
+     implicit none
+ 
+     integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),Ntri
+     integer(kind=8),intent(in) :: N_plusplus
+     integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri),Index_l(Ntri)
+     real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
+     real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri),R_l(3,Ntri)
+     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+     integer(kind=8),intent(out) :: Indof2ndPhonon_plusplus(N_plusplus),Indof3rdPhonon_plusplus(N_plusplus),Indof4thPhonon_plusplus(N_plusplus)
+     real(kind=8),intent(out) :: Gamma_plusplus(N_plusplus),WP4_plusplus
+ 
+     integer(kind=4) :: q(3),qprime(3),qdprime(3),qtprime(3),i,j,k,l
+     integer(kind=8) :: N_plusplus_count
+     integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
+     integer(kind=4) :: ii,jj,kk,ll,ss,startbranch
+     real(kind=8) :: sigma
+     real(kind=8) :: fBEprime,fBEdprime,fBEtprime
+     real(kind=8) :: omega,omegap,omegadp,omegatp
+     real(kind=8) :: realqprime(3),realqdprime(3),realqtprime(3)
+     real(kind=8) :: WP4
+     complex(kind=8) :: Vp
+ 
+     do ii=0,Ngrid(1)-1        ! G1 direction
+        do jj=0,Ngrid(2)-1     ! G2 direction
+           do kk=0,Ngrid(3)-1  ! G3 direction
+              Index_N(ii,jj,kk)=(kk*Ngrid(2)+jj)*Ngrid(1)+ii+1
+           end do
+        end do
+     end do
+     N_plusplus_count=0
+     WP4_plusplus=0.d0
+     i=modulo(mm-1,Nbands)+1
+     ll=int((mm-1)/Nbands)+1
+     q=IJK(:,list(ll))
+     omega=energy(list(ll),i)
+     ! Loop over all processes, detecting those that are allowed and
+     ! computing their amplitudes. Compared to three-phonon, the new algorithm 
+     ! avoids double-counting when selecting allowed processes.
+     if (omega.ne.0) then
+       do ii=1,nptk
+          do jj=ii,nptk
+             do ss=1,nptk
+                qprime=IJK(:,ii)
+                realqprime=matmul(rlattvec,qprime/dble(ngrid))
+                qdprime=IJK(:,jj)
+                realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                qtprime=IJK(:,ss)
+                realqtprime=matmul(rlattvec,qtprime/dble(ngrid))
+                if (all(qtprime.eq.modulo(q+qprime+qdprime,ngrid))) then ! Momentum conservation law
+                   do j=1,Nbands
+                      startbranch=1
+                      if(jj==ii) startbranch=j
+                      do k=startbranch,Nbands
+                         do l=1,Nbands
+                            omegap=energy(ii,j)
+                            omegadp=energy(jj,k)
+                            omegatp=energy(ss,l)
+                            if ((omegap.ne.0).and.(omegadp.ne.0).and.(omegatp.ne.0)) then
+                               sigma=scalebroad*base_sigma(&
+                               -velocity(jj,k,:)+velocity(ss,l,:)) ! Unit of sigma is rad/ps
+                               if (abs(omega+omegap+omegadp-omegatp).le.sigma) then
+                                  N_plusplus_count=N_plusplus_count+1
+                                  ! Filtering those abnormal scattering rates (they actually strictly obey the energy conservation) 
+                                  ! and set the delta function to be 1
+                                  if (sigma.le.0.001) sigma=1/sqrt(Pi)
+                                  fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+                                  fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                                  fBEtprime=1.d0/(exp(hbar*omegatp/Kb/T)-1.D0)
+                                  Indof2ndPhonon_plusplus(N_plusplus_count)=(ii-1)*Nbands+j
+                                  Indof3rdPhonon_plusplus(N_plusplus_count)=(jj-1)*Nbands+k
+                                  Indof4thPhonon_plusplus(N_plusplus_count)=(ss-1)*Nbands+l
+                                  WP4=(fBEprime*fBEdprime*(1+fBEtprime)-(1+fBEprime)*(1+fBEdprime)*fBEtprime)*&
+                                     exp(-(omega+omegap+omegadp-omegatp)**2/(sigma**2))/sigma/sqrt(Pi)/&
+                                     (omega*omegap*omegadp*omegatp)
+                                  if(omegap.le.1.25 .or. omegadp.le.1.25 .or.omegatp.le.1.25) WP4=0 ! Very-low frequency phonons
+                                  WP4_plusplus=WP4_plusplus+WP4
+                                  Vp=Vp_pp(i,j,k,l,list(ll),ii,jj,ss,&
+                                           realqprime,realqdprime,realqtprime,eigenvect,&
+                                           Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l)
+                                  Gamma_plusplus(N_plusplus_count)=hbarp*hbarp*pi/8.d0*WP4*abs(Vp)**2
+                                  ! At this point, units of Gamma are
+                                  ! (1.d-34J*s)^2*(1.d12/s)^(-5)*1amu^(-4)*(ev/angstrom**4)^2,
+                                  ! that is, 3.37617087*1.d9 THz
+                                  Gamma_plusplus(N_plusplus_count)=Gamma_plusplus(N_plusplus_count)*3.37617087*1.d9/nptk/nptk
+                               end if
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+             end do
+          end do
+       end do
+       WP4_plusplus=WP4_plusplus/nptk/nptk
+     end if
+   end subroutine Ind_plusplus_t
+ 
+   ! Scattering amplitudes of 4ph +-/-+ processes.
+   subroutine Ind_plusminus_t(mm,N_plusminus,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       Indof2ndPhonon_plusminus,Indof3rdPhonon_plusminus,Indof4thPhonon_plusminus,Gamma_plusminus,WP4_plusminus)
+     implicit none
+ 
+     integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),Ntri
+     integer(kind=8),intent(in) :: N_plusminus
+     integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri),Index_l(Ntri)
+     real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
+     real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri),R_l(3,Ntri)
+     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+     integer(kind=8),intent(out) :: Indof2ndPhonon_plusminus(N_plusminus),Indof3rdPhonon_plusminus(N_plusminus),Indof4thPhonon_plusminus(N_plusminus)
+     real(kind=8),intent(out) :: Gamma_plusminus(N_plusminus),WP4_plusminus
+ 
+     integer(kind=4) :: q(3),qprime(3),qdprime(3),qtprime(3),i,j,k,l
+     integer(kind=8) :: N_plusminus_count
+     integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
+     integer(kind=4) :: ii,jj,kk,ll,ss,startbranch
+     real(kind=8) :: sigma
+     real(kind=8) :: fBEprime,fBEdprime,fBEtprime
+     real(kind=8) :: omega,omegap,omegadp,omegatp
+     real(kind=8) :: realqprime(3),realqdprime(3),realqtprime(3)
+     real(kind=8) :: WP4
+     complex(kind=8) :: Vp
+ 
+     do ii=0,Ngrid(1)-1        ! G1 direction
+        do jj=0,Ngrid(2)-1     ! G2 direction
+           do kk=0,Ngrid(3)-1  ! G3 direction
+              Index_N(ii,jj,kk)=(kk*Ngrid(2)+jj)*Ngrid(1)+ii+1
+           end do
+        end do
+     end do
+     N_plusminus_count=0
+     WP4_plusminus=0.d0
+     i=modulo(mm-1,Nbands)+1
+     ll=int((mm-1)/Nbands)+1
+     q=IJK(:,list(ll))
+     omega=energy(list(ll),i)
+     ! Loop over all processes, detecting those that are allowed and
+     ! computing their amplitudes.
+     if (omega.ne.0) then
+       do ii=1,nptk
+          do jj=1,nptk
+             do ss=jj,nptk
+                qprime=IJK(:,ii)
+                realqprime=matmul(rlattvec,qprime/dble(ngrid))
+                qdprime=IJK(:,jj)
+                realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                qtprime=IJK(:,ss)
+                realqtprime=matmul(rlattvec,qtprime/dble(ngrid))
+                if (all(qtprime.eq.modulo(q+qprime-qdprime,ngrid))) then
+                   do j=1,Nbands
+                      do k=1,Nbands
+                         startbranch=1
+                         if(ss==jj) startbranch=k
+                         do l=startbranch,Nbands
+                            omegap=energy(ii,j)
+                            omegadp=energy(jj,k)
+                            omegatp=energy(ss,l)
+                            if ((omegap.ne.0).and.(omegadp.ne.0).and.(omegatp.ne.0)) then
+                               sigma=scalebroad*base_sigma(&
+                               velocity(jj,k,:)-velocity(ss,l,:))
+                               if ((list(ll).ne.jj .or. i.ne.k).and.(list(ll).ne.ss .or. i.ne.l).and.&
+                                  (ii.ne.jj .or. j.ne.k).and.(ii.ne.ss .or. j.ne.l) )then ! none of the two pairs can be the same
+                                  if (abs(omega+omegap-omegadp-omegatp).le.sigma) then
+                                     N_plusminus_count=N_plusminus_count+1
+                                     if (sigma.le.0.001) sigma=1/sqrt(Pi)
+                                     fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+                                     fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                                     fBEtprime=1.d0/(exp(hbar*omegatp/Kb/T)-1.D0)
+                                     Indof2ndPhonon_plusminus(N_plusminus_count)=(ii-1)*Nbands+j
+                                     Indof3rdPhonon_plusminus(N_plusminus_count)=(jj-1)*Nbands+k
+                                     Indof4thPhonon_plusminus(N_plusminus_count)=(ss-1)*Nbands+l
+                                     fBEtprime=1.d0/(exp(hbar*omegatp/Kb/T)-1.D0)
+                                     WP4=(fBEprime*(1+fBEdprime)*(1+fBEtprime)-(1+fBEprime)*fBEdprime*fBEtprime)*&
+                                        exp(-(omega+omegap-omegadp-omegatp)**2/(sigma**2))/sigma/sqrt(Pi)/&
+                                        (omega*omegap*omegadp*omegatp)
+                                     if(omegap.le.1.25 .or. omegadp.le.1.25 .or.omegatp.le.1.25) WP4=0
+                                     WP4_plusminus=WP4_plusminus+WP4
+                                     Vp=Vp_pm(i,j,k,l,list(ll),ii,jj,ss,&
+                                                 realqprime,realqdprime,realqtprime,eigenvect,&
+                                                 Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l)
+                                     Gamma_plusminus(N_plusminus_count)=hbarp*hbarp*pi/8.d0*WP4*abs(Vp)**2
+                                     Gamma_plusminus(N_plusminus_count)=Gamma_plusminus(N_plusminus_count)*3.37617087*1.d9/nptk/nptk
+                                  end if
+                               end if
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+             end do
+          end do
+       end do
+       WP4_plusminus=WP4_plusminus/nptk/nptk
+     end if
+   end subroutine Ind_plusminus_t
 
-subroutine target_mode(NList, List, &
+  ! Scattering amplitudes of 4ph -- processes.
+   subroutine Ind_minusminus_t(mm,N_minusminus,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       Indof2ndPhonon_minusminus,Indof3rdPhonon_minusminus,Indof4thPhonon_minusminus,Gamma_minusminus,WP4_minusminus)
+     implicit none
+ 
+     integer(kind=4),intent(in) :: mm,NList,List(Nlist),IJK(3,nptk),Ntri
+     integer(kind=8), intent(in) :: N_minusminus
+     integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri),Index_l(Ntri)
+     real(kind=8),intent(in) :: energy(nptk,Nbands),velocity(nptk,Nbands,3)
+     real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri),R_l(3,Ntri)
+     complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+     integer(kind=8),intent(out) :: Indof2ndPhonon_minusminus(N_minusminus),Indof3rdPhonon_minusminus(N_minusminus),Indof4thPhonon_minusminus(N_minusminus)
+     real(kind=8),intent(out) :: Gamma_minusminus(N_minusminus),WP4_minusminus
+ 
+     integer(kind=4) :: q(3),qprime(3),qdprime(3),qtprime(3),i,j,k,l
+     integer(kind=8) :: N_minusminus_count
+     integer(kind=4) :: Index_N(0:(Ngrid(1)-1),0:(Ngrid(2)-1),0:(Ngrid(3)-1))
+     integer(kind=4) :: ii,jj,kk,ll,ss,startbranch
+     real(kind=8) :: sigma
+     real(kind=8) :: fBEprime,fBEdprime,fBEtprime
+     real(kind=8) :: omega,omegap,omegadp,omegatp
+     real(kind=8) :: realqprime(3),realqdprime(3),realqtprime(3)
+     real(kind=8) :: WP4
+     complex(kind=8) :: Vp
+ 
+     do ii=0,Ngrid(1)-1        ! G1 direction
+        do jj=0,Ngrid(2)-1     ! G2 direction
+           do kk=0,Ngrid(3)-1  ! G3 direction
+              Index_N(ii,jj,kk)=(kk*Ngrid(2)+jj)*Ngrid(1)+ii+1
+           end do
+        end do
+     end do
+     N_minusminus_count=0
+     WP4_minusminus=0.d0
+     i=modulo(mm-1,Nbands)+1
+     ll=int((mm-1)/Nbands)+1
+     q=IJK(:,list(ll))
+     omega=energy(list(ll),i)
+     ! Loop over all processes, detecting those that are allowed and
+     ! computing their amplitudes.
+     if (omega.ne.0) then
+       do ii=1,nptk
+          do jj=ii,nptk
+             do ss=jj,nptk
+                qprime=IJK(:,ii)
+                realqprime=matmul(rlattvec,qprime/dble(ngrid))
+                qdprime=IJK(:,jj)
+                realqdprime=matmul(rlattvec,qdprime/dble(ngrid))
+                qtprime=IJK(:,ss)
+                realqtprime=matmul(rlattvec,qtprime/dble(ngrid))
+                if (all(qtprime.eq.modulo(q-qprime-qdprime,ngrid))) then
+                   do j=1,Nbands
+                      startbranch=1
+                      if(jj==ii) startbranch=j
+                      do k=startbranch,Nbands
+                         startbranch=1
+                         if(ss==jj) startbranch=k
+                         do l=startbranch,Nbands
+                            omegap=energy(ii,j)
+                            omegadp=energy(jj,k)
+                            omegatp=energy(ss,l)
+                            if ((omegap.ne.0).and.(omegadp.ne.0).and.(omegatp.ne.0)) then
+                               sigma=scalebroad*base_sigma(&
+                               velocity(jj,k,:)-velocity(ss,l,:))
+                               if (abs(omega-omegap-omegadp-omegatp).le.sigma) then
+                                  N_minusminus_count=N_minusminus_count+1
+                                  if (sigma.le.0.001) sigma=1/sqrt(Pi)
+                                  fBEprime=1.d0/(exp(hbar*omegap/Kb/T)-1.D0)
+                                  fBEdprime=1.d0/(exp(hbar*omegadp/Kb/T)-1.D0)
+                                  fBEtprime=1.d0/(exp(hbar*omegatp/Kb/T)-1.D0)
+                                  Indof2ndPhonon_minusminus(N_minusminus_count)=(ii-1)*Nbands+j
+                                  Indof3rdPhonon_minusminus(N_minusminus_count)=(jj-1)*Nbands+k
+                                  Indof4thPhonon_minusminus(N_minusminus_count)=(ss-1)*Nbands+l
+                                  WP4=((1+fBEprime)*(1+fBEdprime)*(1+fBEtprime)-fBEprime*fBEdprime*fBEtprime)*&
+                                     exp(-(omega-omegap-omegadp-omegatp)**2/(sigma**2))/sigma/sqrt(Pi)/&
+                                     (omega*omegap*omegadp*omegatp)
+                                  if(omegap.le.1.25 .or. omegadp.le.1.25 .or.omegatp.le.1.25) WP4=0
+                                  WP4_minusminus=WP4_minusminus+WP4
+                                  Vp=Vp_mm(i,j,k,l,list(ll),ii,jj,ss,&
+                                           realqprime,realqdprime,realqtprime,eigenvect,&
+                                           Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l)
+                                  Gamma_minusminus(N_minusminus_count)=hbarp*hbarp*pi/8.d0*WP4*abs(Vp)**2
+                                  Gamma_minusminus(N_minusminus_count)=Gamma_minusminus(N_minusminus_count)*3.37617087*1.d9/nptk/nptk
+                               end if
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+             end do
+          end do
+       end do
+       WP4_minusminus=WP4_minusminus/nptk/nptk
+     end if
+   end subroutine Ind_minusminus_t
+
+subroutine target_mode_4ph(NList, List, &
+     energy,velocity,eigenvect,IJK, &
+     Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,file_plus,file_minus)
+
+   implicit none
+
+
+   integer(kind=4),intent(in) :: NList, List(NList)
+   integer(kind=4),intent(in) :: IJK(3,nptk),Ntri
+   integer(kind=4),intent(in) :: Index_i(Ntri),Index_j(Ntri),Index_k(Ntri),Index_l(Ntri)
+
+   real(kind=8),intent(in) :: energy(nptk,Nbands)
+   real(kind=8),intent(in) :: velocity(nptk,Nbands,3)
+   real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri),R_l(3,Ntri)
+   real(kind=8),intent(in) :: R_j(3,Ntri),R_k(3,Ntri)
+
+   complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
+
+   integer(kind=4) :: branch,ll
+   integer(kind=8) :: Npp,Npm,Nmm
+   real(kind=8) :: WP4pp,WP4pm,WP4mm,Ppp,Ppm,Pmm
+   real(kind=8) :: ratep,ratem,rate
+
+   integer(kind=8),allocatable :: ind2pp(:),ind3pp(:),ind4pp(:)
+   integer(kind=8),allocatable :: ind2pm(:),ind3pm(:),ind4pm(:)
+   integer(kind=8),allocatable :: ind2mm(:),ind3mm(:),ind4mm(:)
+   real(kind=8),allocatable :: gpp(:),gpm(:),gmm(:)
+   integer(kind=4) :: file_pp, file_pm, file_mm
+   
+   branch = modulo(target_mm-1,Nbands) + 1
+   ll = int((target_mm-1)/Nbands)+1
+
+   write(*,*)  "Counting the number of q + q' + q'' => q''' transitions"
+   call NP_plusplus(target_mm, energy, velocity, NList, List, IJK, Npp, Ppp)
+   write(*,*)  "The count is ",Npp
+   write(*,*)  "Counting the number of q + q' => q'' + q''' transitions"
+   call NP_plusminus(target_mm, energy, velocity, NList, List, IJK, Npm, Ppm)
+   write(*,*)  "The count is ",Npm
+   write(*,*)  "Counting the number of q => q' + q'' + q''' transitions"
+   call NP_minusminus(target_mm, energy, velocity, NList, List, IJK, Nmm, Pmm)
+   write(*,*) "The count is ",Nmm
+   
+   allocate(ind2pp(Npp),ind3pp(Npp),ind4pp(Npp),gpp(Npp))
+   allocate(ind2pm(Npm),ind3pm(Npm),ind4pm(Npm),gpm(Npm))
+   allocate(ind2mm(Nmm),ind3mm(Nmm),ind4mm(Nmm),gmm(Nmm))
+
+   if (Npp.ne.0) then ! if there are plus plus processes
+      call Ind_plusplus_t(mm,Npp,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       ind2pp,ind3pp,ind4pp,gpp,WP4pp)
+   else
+      WP4pp=0.d0
+   end if
+
+   if (Npm.ne.0) then ! if there are plus minus processes
+      call Ind_plusminus_t(mm,Npm,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       ind2pm,ind3pm,ind4pm,gpm,WP4pm)
+   else
+      WP4pm=0.d0
+   end if
+
+   if (Nmm.ne.0) then ! if there are minus minus processes
+      call Ind_minusminus_t(mm,Nmm,energy,velocity,eigenvect,Nlist,List,&
+       Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
+       ind2mm,ind3mm,ind4mm,gmm,WP4mm)
+   else
+      WP4mm=0.d0
+   end if
+
+   ratepp=sum(gpp)
+   ratepm=sum(gpm)
+   ratemm=sum(gmm)
+   rate=ratepp+ratepm+ratemm
+
+   write(*,*) "Target mm modal index:", target_mm
+   write(*,*) "Target branch:", branch
+   write(*,*) "Target q index:",List(ll)
+   write(*,*) "Target IJK:",IJK(:,List(ll))
+   write(*,*) "Target frequency:",energy(List(ll),branch)
+   write(*,*) "N plus, N minus:",Np,Nm
+   write(*,*) "4ph plus-plus rate:",ratepp
+   write(*,*) "4ph plus-minus rate:",ratepm
+   write(*,*) "4ph minus-minus rate:",ratemm
+   write(*,*) "4ph total rate:",rate
+
+   deallocate(ind2pp,ind3pp,ind4pp,gpp)
+   deallocate(ind2pm,ind3pm,ind4pm,gpm)
+   deallocate(ind2mm,ind3mm,ind4mm,gmm)
+
+end subroutine target_mode_4ph
+
+
+
+
+
+
+
+subroutine target_mode_3ph(NList, List, &
      energy,velocity,eigenvect,IJK, &
      Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
 
@@ -718,34 +1113,22 @@ subroutine target_mode(NList, List, &
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
 
    integer(kind=4) :: Np,Nm,branch,ll
-   integer(kind=8) :: Npp,Npm,Nmm
-   real(kind=8) :: Pp,Pm,WPp,WPm,Ppp,Ppm,Pmm
+   real(kind=8) :: Pp,Pm,WPp,WPm
    real(kind=8) :: ratep,ratem,rate
 
    integer(kind=4),allocatable :: ind2p(:),ind3p(:)
    integer(kind=4),allocatable :: ind2m(:),ind3m(:)
    real(kind=8),allocatable :: gp(:),gm(:)
    integer(kind=4) :: file_plus, file_minus
+
    branch = modulo(target_mm-1,Nbands) + 1
    ll = int((target_mm-1)/Nbands)+1
-
    write(*,*) "Counting the number of q + q' => q'' transitions"
    call NP_plus(target_mm,energy,velocity,NList,List,IJK,Np,Pp) ! counts the number of upconversion
    write(*,*)  "The count is ", Np
    write(*,*)  "Counting the number of q => q' + q'' transitions"
    call NP_minus(target_mm,energy,velocity,NList,List,IJK,Nm,Pm) ! counts the number of downconvresion
-   write(*,*)  "The count is ", Nm
-   if (four_phonon) then
-      write(*,*)  "Counting the number of q + q' + q'' => q''' transitions"
-      call NP_plusplus(target_mm, energy, velocity, NList, List, IJK, Npp, Ppp)
-      write(*,*)  "The count is ",Npp
-      write(*,*)  "Counting the number of q + q' => q'' + q''' transitions"
-      call NP_plusminus(target_mm, energy, velocity, NList, List, IJK, Npm, Ppm)
-      write(*,*)  "The count is ",Npm
-      write(*,*)  "Counting the number of q => q' + q'' + q''' transitions"
-      call NP_minusminus(target_mm, energy, velocity, NList, List, IJK, Nmm, Pmm)
-      write(*,*) "The count is ",Nmm
-   end if   
+   write(*,*)  "The count is ", Nm 
 
    allocate(ind2p(Np),ind3p(Np),gp(Np))
    allocate(ind2m(Nm),ind3m(Nm),gm(Nm))
@@ -783,11 +1166,13 @@ subroutine target_mode(NList, List, &
    deallocate(ind2p,ind3p,gp)
    deallocate(ind2m,ind3m,gm)
 
-end subroutine target_mode
+end subroutine target_mode_3ph
 
 
 
-!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
