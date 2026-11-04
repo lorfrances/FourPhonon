@@ -107,7 +107,7 @@ program ShengBTE
   character(len=128) :: sorientation
   character(len=30) :: tempstring1,tempstring2,tempstring3
   character(len=128) :: filename_plus, filename_minus
-  integer(kind=4) :: file_plus,file_minus ! initialize file handles
+  integer(kind=4) :: file_plus,file_minus,file_plusplus,file_plusminus,file_minusminus ! initialize file handles
   
   real(kind=8) :: dnrm2
 
