@@ -998,7 +998,7 @@ module processes
 
 subroutine target_mode_4ph(NList, List, &
      energy,velocity,eigenvect,IJK, &
-     Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,file_plus,file_minus)
+     Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,file_pp,file_pm,file_mm)
 
    implicit none
 
@@ -1010,14 +1010,13 @@ subroutine target_mode_4ph(NList, List, &
    real(kind=8),intent(in) :: energy(nptk,Nbands)
    real(kind=8),intent(in) :: velocity(nptk,Nbands,3)
    real(kind=8),intent(in) :: Phi(3,3,3,3,Ntri),R_j(3,Ntri),R_k(3,Ntri),R_l(3,Ntri)
-   real(kind=8),intent(in) :: R_j(3,Ntri),R_k(3,Ntri)
 
    complex(kind=8),intent(in) :: eigenvect(nptk,Nbands,Nbands)
 
    integer(kind=4) :: branch,ll
    integer(kind=8) :: Npp,Npm,Nmm
    real(kind=8) :: WP4pp,WP4pm,WP4mm,Ppp,Ppm,Pmm
-   real(kind=8) :: ratep,ratem,rate
+   real(kind=8) :: ratepp,ratepm,ratemm,rate
 
    integer(kind=8),allocatable :: ind2pp(:),ind3pp(:),ind4pp(:)
    integer(kind=8),allocatable :: ind2pm(:),ind3pm(:),ind4pm(:)
@@ -1043,7 +1042,7 @@ subroutine target_mode_4ph(NList, List, &
    allocate(ind2mm(Nmm),ind3mm(Nmm),ind4mm(Nmm),gmm(Nmm))
 
    if (Npp.ne.0) then ! if there are plus plus processes
-      call Ind_plusplus_t(mm,Npp,energy,velocity,eigenvect,Nlist,List,&
+      call Ind_plusplus_t(target_mm,Npp,energy,velocity,eigenvect,Nlist,List,&
        Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
        ind2pp,ind3pp,ind4pp,gpp,WP4pp)
    else
@@ -1051,7 +1050,7 @@ subroutine target_mode_4ph(NList, List, &
    end if
 
    if (Npm.ne.0) then ! if there are plus minus processes
-      call Ind_plusminus_t(mm,Npm,energy,velocity,eigenvect,Nlist,List,&
+      call Ind_plusminus_t(target_mm,Npm,energy,velocity,eigenvect,Nlist,List,&
        Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
        ind2pm,ind3pm,ind4pm,gpm,WP4pm)
    else
@@ -1059,7 +1058,7 @@ subroutine target_mode_4ph(NList, List, &
    end if
 
    if (Nmm.ne.0) then ! if there are minus minus processes
-      call Ind_minusminus_t(mm,Nmm,energy,velocity,eigenvect,Nlist,List,&
+      call Ind_minusminus_t(target_mm,Nmm,energy,velocity,eigenvect,Nlist,List,&
        Ntri,Phi,R_j,R_k,R_l,Index_i,Index_j,Index_k,Index_l,IJK,&
        ind2mm,ind3mm,ind4mm,gmm,WP4mm)
    else
@@ -1076,7 +1075,7 @@ subroutine target_mode_4ph(NList, List, &
    write(*,*) "Target q index:",List(ll)
    write(*,*) "Target IJK:",IJK(:,List(ll))
    write(*,*) "Target frequency:",energy(List(ll),branch)
-   write(*,*) "N plus, N minus:",Np,Nm
+   write(*,*) "N plus-plus, N plus-minus, N minus-minus:",Npp,Npm,Nmm
    write(*,*) "4ph plus-plus rate:",ratepp
    write(*,*) "4ph plus-minus rate:",ratepm
    write(*,*) "4ph minus-minus rate:",ratemm

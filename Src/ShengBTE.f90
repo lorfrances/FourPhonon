@@ -295,6 +295,17 @@ program ShengBTE
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
          close(file_plus)
          close(file_minus)
+         
+         write(*,*) "Third-order calculation completed!"
+
+         if (four_phonon) then
+            write(*,*) "Beginning fourth-order calculation"
+            call target_mode_4ph(NList, List, &
+                        energy,velocity,eigenvect,IJK, &
+                        Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u,file_plusplus,file_plusminus,file_minus)
+         end if
+
+
       endif
    enddo
    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
