@@ -290,7 +290,7 @@ program ShengBTE
             'omega0 omega1 omega2 Vp_abs delta_weight ' // &
             'q1 q2 q3 qdp_radial sigma gamma_raw'
 
-         call target_mode(NList, List, &
+         call target_mode_3ph(NList, List, &
                         energy,velocity,eigenvect,IJK, &
                         Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
          close(file_plus)
