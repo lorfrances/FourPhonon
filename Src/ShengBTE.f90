@@ -108,7 +108,7 @@ program ShengBTE
   character(len=30) :: tempstring1,tempstring2,tempstring3
   character(len=128) :: filename_plus, filename_minus
   integer(kind=4) :: file_plus,file_minus,file_plusplus,file_plusminus,file_minusminus ! initialize file handles
-  integer(kind=4) :: target_count, target_idx, target_unit
+  integer(kind=4) :: target_count, target_idx, target_unit, target_value,ios
   integer(kind=4),allocatable :: target_modes(:)
   real(kind=8) :: dnrm2
 
@@ -342,7 +342,7 @@ program ShengBTE
   !!!!!!!!!!!!!!!!!! TARGET MODE EXECUTION !!!!!!!!!!!!!!!!!!!(AUTHOR: LORENZO FRANCESCHETTI) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-   
+
   open(101,file="BTE.cvVsT")
   open(102,file="BTE.KappaTensorVsT_sg")
   if (myid.eq.0) print*, "Info: start calculating specific heat and kappa in the small-grain limit "
