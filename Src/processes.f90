@@ -595,7 +595,7 @@ module processes
                        Vp=Vp_plus(i,j,k,list(ll),ii,ss,&
                             realqprime,realqdprime,eigenvect,&
                             Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
-                       rate_coeff = hbar*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)*5.60626442*1.d8/nptk ! THz
+                       rate_coeff = hbarp*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)*5.60626442*1.d8/nptk ! THz
                        WP3=(fBEprime-fBEdprime)*delta_function/(omega*omegap*omegadp)
                        WP3_plus=WP3_plus+WP3
                        Gamma_plus(N_plus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
@@ -682,7 +682,7 @@ module processes
                        Vp=Vp_minus(i,j,k,list(ll),ii,ss,&
                             realqprime,realqdprime,eigenvect,&
                             Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
-                       rate_coeff = hbar*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)*5.60626442*1.d8/nptk
+                       rate_coeff = hbarp*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)*5.60626442*1.d8/nptk
                        WP3=(fBEprime+fBEdprime+1)*delta_function/(omega*omegap*omegadp)     
                        WP3_minus=WP3_minus+WP3
                        Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
