@@ -294,9 +294,9 @@ program ShengBTE
       if (myid.eq.0) then
 
          !!! prepare files !!!
-         write(filename_plus,'(I0,A,I0,A)') &
+         write(filename_plus,'(A,I0,A)') &
             'targets_3ph_plus_',nptk,'.DAT'
-         write(filename_minus,'(I0,A,I0,A)') &
+         write(filename_minus,'(A,I0,A)') &
             'targets_3ph_minus_',nptk,'.DAT'
 
          open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
