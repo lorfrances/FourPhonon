@@ -548,7 +548,7 @@ module processes
      real(kind=8) :: realqprime(3),realqdprime(3)
      real(kind=8) :: qdprime_folded(3)
      real(kind=8) :: WP3
-     real(kind=8) :: delta_function, qdp_radial
+     real(kind=8) :: delta_function, qdp_radial, rate_coeff
      complex(kind=8) :: Vp
  
      do ii=0,Ngrid(1)-1        ! G1 direction
@@ -595,6 +595,7 @@ module processes
                        Vp=Vp_plus(i,j,k,list(ll),ii,ss,&
                             realqprime,realqdprime,eigenvect,&
                             Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+                       rate_coeff = hbar*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)
                        WP3=(fBEprime-fBEdprime)*delta_function/(omega*omegap*omegadp)
                        WP3_plus=WP3_plus+WP3
                        Gamma_plus(N_plus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
@@ -602,7 +603,7 @@ module processes
                        ! (1.d-34J*s)*(1.d12/s)^(-4)*1amu^(-3)*(ev/angstrom**3)^2,
                        ! that is, 5.60626442*1.d8 THz
                        Gamma_plus(N_plus_count)=Gamma_plus(N_plus_count)*5.60626442*1.d8/nptk ! THz
-                       write(file_plus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,qdp_radial,sigma,Gamma_plus(N_plus_count)
+                       write(file_plus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,qdprime_folded,qdp_radial,rate_coeff,Gamma_plus(N_plus_count)
                      end if 
                   end if
               end do ! k
@@ -636,7 +637,7 @@ module processes
      real(kind=8) :: realqprime(3),realqdprime(3)
      real(kind=8) :: qdprime_folded(3)
      real(kind=8) :: WP3
-     real(kind=8) :: delta_function, qdp_radial
+     real(kind=8) :: delta_function, qdp_radial, rate_coeff
      complex(kind=8) :: Vp
  
      do ii=0,Ngrid(1)-1        ! G1 direction
@@ -681,13 +682,14 @@ module processes
                        Vp=Vp_minus(i,j,k,list(ll),ii,ss,&
                             realqprime,realqdprime,eigenvect,&
                             Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k)
+                       rate_coeff = hbar*pi/4.0d0*abs(Vp)**2*delta_function/(omega*omegap*omegadp)
                        WP3=(fBEprime+fBEdprime+1)*delta_function/(omega*omegap*omegadp)     
                        WP3_minus=WP3_minus+WP3
                        Gamma_minus(N_minus_count)=hbarp*pi/4.d0*WP3*abs(Vp)**2
                        Gamma_minus(N_minus_count)=Gamma_minus(N_minus_count)*5.60626442*1.d8/nptk
                        
                        if (Indof2ndPhonon_minus(N_minus_count).le.Indof3rdPhonon_minus(N_minus_count)) then
-                           write(file_minus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp,abs(Vp),delta_function,qdprime_folded,qdp_radial,sigma,Gamma_minus(N_minus_count)
+                           write(file_minus,'(*(g0,1X))') i, j, k, mm, ii, ss, omega, omegap, omegadp, qdprime_folded,qdp_radial,rate_coeff,Gamma_minus(N_minus_count)
                        end if
                      end if
                  end if

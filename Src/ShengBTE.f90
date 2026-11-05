@@ -108,7 +108,8 @@ program ShengBTE
   character(len=30) :: tempstring1,tempstring2,tempstring3
   character(len=128) :: filename_plus, filename_minus
   integer(kind=4) :: file_plus,file_minus,file_plusplus,file_plusminus,file_minusminus ! initialize file handles
-  
+  integer(kind=4) :: target_count, target_idx, target_unit
+  integer(kind=4),allocatable :: target_modes(:)
   real(kind=8) :: dnrm2
 
    ! MPI time
@@ -253,6 +254,10 @@ program ShengBTE
   call eigenDM(energy,eigenvect,velocity)
   if(myid.eq.0)write(*,*) "Info: spectrum calculation finished"
 
+
+
+
+  !!!!!!!!!!!!!!!!!! TARGET MODE EXECUTION !!!!!!!!!!!!!!!!!!!(AUTHOR: LORENZO FRANCESCHETTI) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (run_target_mode) then
    ! Load the 3rd-IFCs from FORCE_CONSTANTS_3RD.
    write(*,*)  "Loading 3rd-order force constants"
@@ -263,57 +268,81 @@ program ShengBTE
       write(*,*) "Loading 4th-order force constants"
       call read4fc(Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u)
    end if
+   
+   open(newunit=target_unit,file="TARGET_MODES", &
+     status="old",action="read")
+   target_count = 0
+   do 
+      read(target_unit,*,iostat=ios) target_value
+      if (ios<0) exit  ! End of file
+      if (ios>0) error stop "Invalid entry in TARGET_MODES"
+
+      target_count = target_count + 1
+   end do
+   allocate(target_modes(target_count))
+   rewind(target_unit)
+   do target_idx=1,target_count
+      read(target_unit,*) target_modes(target_idx)
+   end do
+
 
    do Tcounter=1,CEILING((T_max-T_min)/T_step)+1
       T=T_min+(Tcounter-1)*T_step
       if ((T.gt.T_max).and.(T.lt.(T_max+1.d0)))  exit
       if (T.gt.(T_max+1.d0)) T=T_max
-      if (myid.eq.0) then
-         print *, "Info: Temperature=",T
-         print *, "Running target mode"         
-         
-         write(filename_plus,'(I0,A,I0,A)') &
-            target_mm,'_3ph_plus_',nptk,'.DAT'
-         write(filename_minus,'(I0,A,I0,A)') &
-            target_mm,'_3ph_minus_',nptk,'.DAT'
 
-         open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
-         open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
+      do target_idx=1,target_count
+         target_mm = target_modes(target_idx)
+         if (myid.eq.0) then
+            print *, "Info: Temperature=",T
+            print *, "Running target mode", target_mm         
+            
+            write(filename_plus,'(I0,A,I0,A)') &
+               target_mm,'_3ph_plus_',nptk,'.DAT'
+            write(filename_minus,'(I0,A,I0,A)') &
+               target_mm,'_3ph_minus_',nptk,'.DAT'
 
-         write(file_plus,'(A)') &
-            '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
-            'omega0 omega1 omega2 Vp_abs delta_weight ' // &
-            'q1 q2 q3 qdp_radial sigma gamma_raw'
+            open(newunit=file_plus, file=trim(filename_plus),status="replace",action="write")
+            open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
 
-         write(file_minus,'(A)') &
-            '# branch0 branch1 branch2 target_list_mode_id q_ii q_ss ' // &
-            'omega0 omega1 omega2 Vp_abs delta_weight ' // &
-            'q1 q2 q3 qdp_radial sigma gamma_raw'
+            write(file_plus,'(A)') &
+               'branch0 branch1 branch2 target_mm q_ii q_ss ' // &
+               'omega0 omega1 omega2' // &
+               'q1 q2 q3 qdp_radial C_pp gamma_raw'
 
-         call target_mode_3ph(NList, List, &
-                        energy,velocity,eigenvect,IJK, &
-                        Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
-         close(file_plus)
-         close(file_minus)
-         
-         write(*,*) "Third-order calculation completed!"
+            write(file_minus,'(A)') &
+               'branch0 branch1 branch2 target_mm q_ii q_ss ' // &
+               'omega0 omega1 omega2' // &
+               'q1 q2 q3 qdp_radial C_pp gamma_raw'
 
-         if (four_phonon) then
-            write(*,*) "Beginning fourth-order calculation"
-            call target_mode_4ph(NList, List, &
-                        energy,velocity,eigenvect,IJK, &
-                        Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u,file_plusplus,file_plusminus,file_minus)
-         end if
+            call target_mode_3ph(NList, List, &
+                           energy,velocity,eigenvect,IJK, &
+                           Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
+            close(file_plus)
+            close(file_minus)
+            
+            write(*,*) "Third-order calculation completed!"
+
+            if (four_phonon) then
+               write(*,*) "Beginning fourth-order calculation"
+               call target_mode_4ph(NList, List, &
+                           energy,velocity,eigenvect,IJK, &
+                           Ntri_4fc,Psi,R_s,R_t,R_u,Index_r,Index_s,Index_t,Index_u,file_plusplus,file_plusminus,file_minus)
+            end if
 
 
-      endif
+         endif
+      enddo
    enddo
    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
    call MPI_FINALIZE(ierr)
    stop
    end if
 
+  !!!!!!!!!!!!!!!!!! TARGET MODE EXECUTION !!!!!!!!!!!!!!!!!!!(AUTHOR: LORENZO FRANCESCHETTI) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
+   
   open(101,file="BTE.cvVsT")
   open(102,file="BTE.KappaTensorVsT_sg")
   if (myid.eq.0) print*, "Info: start calculating specific heat and kappa in the small-grain limit "
