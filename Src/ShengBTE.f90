@@ -303,12 +303,12 @@ program ShengBTE
          open(newunit=file_minus, file=trim(filename_minus),status="replace",action="write")
 
          write(file_plus,'(A)') &
-            'branch0 branch1 branch2 target_mm q_ii q_ss ' // &
+            'target_mm branch0 branch1 branch2 q_ii q_ss ' // &
             'omega0 omega1 omega2 ' // &
             'q1 q2 q3 qdp_radial C_pp gamma_raw'
 
          write(file_minus,'(A)') &
-            'branch0 branch1 branch2 target_mm q_ii q_ss ' // &
+            'target_mm branch0 branch1 branch2 q_ii q_ss ' // &
             'omega0 omega1 omega2 ' // &
             'q1 q2 q3 qdp_radial C_pp gamma_raw'
          !!!!!!!!!!!!!!!!!!!!!!!
@@ -322,10 +322,8 @@ program ShengBTE
                               energy,velocity,eigenvect,IJK, &
                               Ntri,Phi,R_j,R_k,Index_i,Index_j,Index_k,file_plus,file_minus)
                
-               
-
-               
                write(*,*) "Third-order calculation completed!"
+               write(*,*) "::::::::::::::::::::::::::::::::::"
 
                if (four_phonon) then
                   write(*,*) "Beginning fourth-order calculation"
